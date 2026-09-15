@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>超・授業中居眠りサバイバー - Single Canvas Vertical Layout Edition</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=RocknRoll+One&family=M+PLUS+Rounded+1c:wght@800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body {
+            font-family: 'RocknRoll One', 'M PLUS Rounded 1c', sans-serif;
+            background-color: #020617;
+            color: #f8fafc;
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        input, button, label {
+            user-select: auto !important;
+            -webkit-user-select: auto !important;
+            touch-action: auto !important;
+        }
+
+        .game-wrapper {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #020617;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 1120px;
+            height: 100%;
+            max-height: 630px;
+            aspect-ratio: 16 / 9;
+            background: #090d16;
+            overflow: hidden;
+            box-shadow: 0 0 60px rgba(0,0,0,0.9);
+            border-radius: 12px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        /* Rainbow Neon Glow on Hyper Combos / Cut-ins */
+        .fever-glow {
+            animation: rainbowGlow 0.4s infinite alternate;
+        }
+
+        @keyframes rainbowGlow {
+            0% { box-shadow: 0 0 50px rgba(239, 68, 68, 0.9), inset 0 0 30px rgba(239, 68, 68, 0.5); border-color: #ef4444; }
+            50% { box-shadow: 0 0 50px rgba(250, 204, 21, 0.9), inset 0 0 30px rgba(250, 204, 21, 0.5); border-color: #facc15; }
+            100% { box-shadow: 0 0 50px rgba(56, 189, 248, 0.9), inset 0 0 30px rgba(56, 189, 248, 0.5); border-color: #38bdf8; }
+        }
+
+        /* Cut-in Text Animations */
+        @keyframes cutInGiri {
+            0% { transform: translate(-50%, -50%) rotate(-10deg) scale(0.1); opacity: 0; }
+            30% { transform: translate(-50%, -50%) rotate(-10deg) scale(1.3); opacity: 1; }
+            70% { transform: translate(-50%, -50%) rotate(-10deg) scale(1.0); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(-10deg) scale(1.1); opacity: 0; }
+        }
+
+        @keyframes cutInKami {
+            0% { transform: translate(-50%, -50%) rotate(-15deg) scale(0.1); opacity: 0; filter: hue-rotate(0deg); }
+            25% { transform: translate(-50%, -50%) rotate(-15deg) scale(1.7); opacity: 1; filter: hue-rotate(180deg); }
+            65% { transform: translate(-50%, -50%) rotate(-15deg) scale(1.1); opacity: 1; filter: hue-rotate(360deg); }
+            100% { transform: translate(-50%, -50%) rotate(-15deg) scale(1.4); opacity: 0; filter: hue-rotate(720deg); }
+        }
+
+        .cutin-giri {
+            animation: cutInGiri 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            text-shadow: 5px 5px 0 #000, -5px -5px 0 #000, 5px -5px 0 #000, -5px 5px 0 #000, 0 10px 20px rgba(234, 179, 8, 1);
+        }
+
+        .cutin-kami {
+            animation: cutInKami 1.1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            text-shadow: 8px 8px 0 #000, -8px -8px 0 #000, 8px -8px 0 #000, -8px 8px 0 #000, 0 0 50px rgba(244, 63, 94, 1);
+        }
+
+        .shake-light { animation: shakeLight 0.2s ease-in-out; }
+        .shake-heavy { animation: shakeHeavy 0.45s ease-in-out; }
+
+        @keyframes shakeLight {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(-5px, 5px); }
+            75% { transform: translate(5px, -5px); }
+        }
+
+        @keyframes shakeHeavy {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-14px, 10px) rotate(-2deg); }
+            30% { transform: translate(14px, -12px) rotate(2deg); }
+            50% { transform: translate(-10px, 8px) rotate(-1deg); }
+            70% { transform: translate(10px, -6px); }
+            90% { transform: translate(-5px, 3px); }
+        }
+
+        .scroll-custom::-webkit-scrollbar { width: 6px; }
+        .scroll-custom::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        .scroll-custom::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen select-none">
+
+    <!-- PORTRAIT WARNING -->
+    <div id="portrait-warning" class="fixed inset-0 z-50 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center hidden">
+        <div class="animate-bounce mb-4 text-6xl">📱🔄</div>
+        <h2 class="text-2xl md:text-3xl font-black text-amber-400 mb-2">画面を横向きにしてね！</h2>
+        <p class="text-slate-300 text-sm md:text-base">このゲームは横画面専用です。<br>端末を横にしてプレイしてください！</p>
+    </div>
+
+    <!-- GAME WRAPPER -->
+    <div class="game-wrapper">
+        <div id="game-container" class="game-container relative flex flex-col justify-between p-3 md:p-5 border-4 border-slate-800">
+            
+            <canvas id="gameCanvas" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></canvas>
+            <div id="cutin-container" class="absolute inset-0 z-20 pointer-events-none overflow-hidden"></div>
+
+            <!-- UI TOP BAR (視界を遮らないよう両端へ配置) -->
+            <div class="relative z-10 flex justify-between items-start pointer-events-none">
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center gap-2 pointer-events-auto">
+                        <button id="btn-change-name" class="bg-indigo-600/90 hover:bg-indigo-500 border-2 border-indigo-400 text-white px-3 py-1 rounded-full text-xs md:text-sm font-bold flex items-center gap-1 shadow-lg active:scale-95 transition">
+                            <span id="display-name">ゲスト</span>
+                            <span class="text-xs opacity-75">✏️</span>
+                        </button>
+                        <button id="btn-audio" class="bg-slate-800/80 border border-slate-600 px-2 py-1 rounded-full text-xs font-bold text-slate-300 hover:text-white transition">
+                            🔊 SOUND: ON
+                        </button>
+                    </div>
+                    <div class="bg-slate-900/90 backdrop-blur-md border-2 border-amber-500/50 rounded-xl px-4 py-1.5 shadow-xl flex items-baseline gap-2">
+                        <span class="text-xs text-amber-400 font-bold">Zzz... 睡眠スコア</span>
+                        <span id="score-val" class="text-2xl md:text-4xl font-black text-amber-300 tracking-wider">0</span>
+                        <span class="text-xs text-amber-500">pt</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-end gap-1">
+                    <div id="combo-badge" class="bg-gradient-to-r from-red-600 via-amber-500 to-yellow-300 text-slate-950 font-black px-4 py-1.5 rounded-xl text-base md:text-lg shadow-2xl transform rotate-3 opacity-0 transition-all duration-200 border-2 border-white scale-110">
+                        🔥 <span id="combo-count">0</span> COMBO BURST! ⚡
+                    </div>
+                    <div class="text-right bg-slate-900/90 px-3 py-1 rounded-lg border border-slate-700">
+                        <span class="text-xs text-slate-400 block">自己ベスト</span>
+                        <span id="high-score-val" class="text-lg md:text-xl font-bold text-emerald-400">0 pt</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOUCH CONTROLS (下部タップエリア) -->
+            <div id="touch-zone" class="absolute inset-0 z-10 flex flex-col items-center justify-end pb-3 cursor-pointer select-none">
+                <div id="touch-hint" class="bg-slate-900/80 backdrop-blur-md text-amber-300 font-bold px-6 py-2 rounded-full text-xs md:text-sm border border-amber-500/40 shadow-xl pointer-events-none mb-1">
+                    👇 画面【長押し】で居眠り / 先生の『⚠️』で【離す】
+                </div>
+            </div>
+
+            <!-- NAME INPUT MODAL -->
+            <div id="modal-name" class="absolute inset-0 z-40 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+                <div class="bg-slate-900 border-4 border-indigo-500/80 rounded-2xl p-6 w-full max-w-md shadow-2xl text-center">
+                    <div class="text-5xl mb-2">😴🏫</div>
+                    <h1 class="text-2xl md:text-3xl font-black text-amber-400 mb-1">超・授業中居眠り</h1>
+                    <p class="text-xs md:text-sm text-slate-400 mb-5">〜 視線とチョークを回避して爆睡せよ！ 〜</p>
+
+                    <div class="space-y-4 mb-6 text-left">
+                        <label class="block text-xs font-bold text-slate-300">プレイヤー名（ランキング用）</label>
+                        <input type="text" id="input-player-name" maxlength="10" placeholder="なまえを入力..." 
+                               class="w-full bg-slate-800 border-2 border-indigo-400 rounded-xl px-4 py-3 text-white font-bold text-base focus:outline-none focus:border-amber-400 transition text-center shadow-inner">
+                        <p id="name-error" class="text-red-400 text-xs hidden font-bold text-center">※ 名前を入力してください！</p>
+                    </div>
+
+                    <button id="btn-start-game" class="w-full bg-gradient-to-r from-amber-500 via-red-500 to-pink-500 hover:from-amber-400 hover:to-pink-400 text-slate-950 font-black text-xl py-3.5 rounded-xl shadow-2xl transform active:scale-95 transition border-2 border-yellow-300">
+                        授業スタート！🚀
+                    </button>
+                </div>
+            </div>
+
+            <!-- GAME OVER MODAL -->
+            <div id="modal-gameover" class="absolute inset-0 z-30 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
+                <div class="bg-slate-900 border-4 border-red-500 rounded-2xl p-4 md:p-5 w-full max-w-lg shadow-2xl text-center">
+                    <div class="text-4xl mb-1 animate-bounce">💥💀</div>
+                    <h2 class="text-2xl md:text-3xl font-black text-red-500 mb-1">バレて即死！！</h2>
+                    <p id="gameover-reason" class="text-xs text-slate-300 mb-3">先生に激怒された！</p>
+
+                    <div class="bg-slate-800/90 rounded-xl p-2.5 border border-slate-700 mb-3 flex justify-around items-center">
+                        <div>
+                            <span class="text-xs text-slate-400 block">今回のスコア</span>
+                            <span id="final-score" class="text-xl md:text-2xl font-black text-amber-300">0</span>
+                        </div>
+                        <div class="border-r border-slate-700 h-8"></div>
+                        <div>
+                            <span class="text-xs text-slate-400 block">最大コンボ</span>
+                            <span id="final-combo" class="text-lg md:text-xl font-black text-red-400">0</span>
+                        </div>
+                    </div>
+
+                    <!-- RANKING TABS (デイリー & ウィークリー) -->
+                    <div class="mb-3">
+                        <div class="flex justify-between items-center mb-2">
+                            <div class="flex gap-1">
+                                <button id="tab-daily" class="px-3 py-1 rounded-t-lg text-xs font-bold transition bg-amber-500 text-slate-950">
+                                    🔥 デイリー (1日更新)
+                                </button>
+                                <button id="tab-weekly" class="px-3 py-1 rounded-t-lg text-xs font-bold transition bg-slate-800 text-slate-400 hover:text-white">
+                                    🏆 ウィークリー (1週間更新)
+                                </button>
+                            </div>
+                        </div>
+                        <div id="ranking-list" class="bg-slate-950/80 rounded-b-lg rounded-tr-lg p-2 max-h-28 overflow-y-auto scroll-custom border border-slate-800 text-xs space-y-1">
+                            <div class="text-slate-500 text-center py-2">ランキング読み込み中...</div>
+                        </div>
+                    </div>
+
+                    <button id="btn-retry" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-lg py-2.5 rounded-xl shadow-lg transform active:scale-95 transition">
+                        もう一回チャレンジ！ 🔄
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        /* FIREBASE & LOCAL STORAGE */
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-DemoKeyForClassroomNappingGame12345",
+            authDomain: "classroom-napping-survivor.firebaseapp.com",
+            projectId: "classroom-napping-survivor",
+            storageBucket: "classroom-napping-survivor.appspot.com",
+            messagingSenderId: "1029384756",
+            appId: "1:1029384756:web:abcd1234efgh5678"
+        };
+
+        let db = null;
+        let useLocalStorageOnly = false;
+
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+        } catch (e) {
+            useLocalStorageOnly = true;
+        }
+
+        const COLLECTION_NAME = "napping_leaderboard";
+        const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+        let activeTab = 'daily';
+
+        function getSavedName() { return localStorage.getItem('napping_player_name') || ''; }
+        function savePlayerName(name) { localStorage.setItem('napping_player_name', name); }
+        function getLocalHighScore() { return parseInt(localStorage.getItem('napping_high_score') || '0', 10); }
+        function setLocalHighScore(score) { localStorage.setItem('napping_high_score', score.toString()); }
+
+        async function submitScoreToOnlineLeaderboard(playerName, score) {
+            if (!playerName) return;
+            const now = Date.now();
+            let localRankings = JSON.parse(localStorage.getItem('mock_online_leaderboard') || '[]');
+            localRankings = localRankings.filter(item => (now - item.timestamp) < SEVEN_DAYS_MS);
+
+            const existingIdx = localRankings.findIndex(r => r.name.toLowerCase() === playerName.toLowerCase());
+            if (existingIdx !== -1) {
+                if (score > localRankings[existingIdx].score) {
+                    localRankings[existingIdx].score = score;
+                    localRankings[existingIdx].timestamp = now;
+                }
+            } else {
+                localRankings.push({ name: playerName, score: score, timestamp: now });
+            }
+
+            localRankings.sort((a, b) => b.score - a.score);
+            localStorage.setItem('mock_online_leaderboard', JSON.stringify(localRankings.slice(0, 50)));
+
+            if (useLocalStorageOnly || !db) return;
+
+            try {
+                const docRef = db.collection(COLLECTION_NAME).doc(playerName.toLowerCase());
+                const doc = await docRef.get();
+                if (!doc.exists || doc.data().score < score) {
+                    await docRef.set({ name: playerName, score: score, timestamp: now });
+                }
+            } catch (err) {}
+        }
+
+        async function fetchOnlineLeaderboards(period = 'daily') {
+            const now = Date.now();
+            const timeLimit = period === 'daily' ? ONE_DAY_MS : SEVEN_DAYS_MS;
+            let results = [];
+
+            if (!useLocalStorageOnly && db) {
+                try {
+                    const snapshot = await db.collection(COLLECTION_NAME).orderBy('score', 'desc').limit(20).get();
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.timestamp && (now - data.timestamp) < timeLimit) {
+                            results.push(data);
+                        }
+                    });
+                } catch (e) {}
+            }
+
+            if (results.length === 0) {
+                const localData = JSON.parse(localStorage.getItem('mock_online_leaderboard') || '[]');
+                results = localData.filter(item => (now - item.timestamp) < timeLimit);
+            }
+            return results.slice(0, 5);
+        }
+
+        /* SOUND FX SYNTHESIZER */
+        class SoundFX {
+            constructor() { this.ctx = null; this.muted = false; }
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+            playTone(freq, type, duration, vol = 0.1) {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch (e) {}
+            }
+            snore() { this.playTone(120 + Math.random() * 40, 'sawtooth', 0.15, 0.03); }
+            alert() {
+                this.playTone(880, 'square', 0.12, 0.12);
+                setTimeout(() => this.playTone(1100, 'square', 0.15, 0.12), 70);
+            }
+            giriSafe() {
+                this.playTone(523.25, 'sine', 0.1, 0.15);
+                setTimeout(() => this.playTone(783.99, 'triangle', 0.2, 0.2), 80);
+            }
+            kamiSafe() {
+                // 超・神セーフ ファンファーレ
+                [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((f, idx) => {
+                    setTimeout(() => this.playTone(f, 'square', 0.25, 0.22), idx * 30);
+                });
+            }
+            chalkShatter() {
+                this.playTone(1200, 'triangle', 0.05, 0.3);
+                setTimeout(() => this.playTone(2400, 'sine', 0.15, 0.25), 30);
+            }
+            gameover() {
+                this.playTone(150, 'sawtooth', 0.4, 0.3);
+                setTimeout(() => this.playTone(90, 'sawtooth', 0.6, 0.4), 180);
+            }
+        }
+
+        const sfx = new SoundFX();
+
+        /* GAME SETUP */
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameContainer = document.getElementById('game-container');
+        const cutinContainer = document.getElementById('cutin-container');
+
+        const modalName = document.getElementById('modal-name');
+        const modalGameOver = document.getElementById('modal-gameover');
+        const inputName = document.getElementById('input-player-name');
+        const btnStart = document.getElementById('btn-start-game');
+        const btnRetry = document.getElementById('btn-retry');
+        const btnChangeName = document.getElementById('btn-change-name');
+        const btnAudio = document.getElementById('btn-audio');
+        const displayName = document.getElementById('display-name');
+        const nameError = document.getElementById('name-error');
+
+        const scoreVal = document.getElementById('score-val');
+        const highScoreVal = document.getElementById('high-score-val');
+        const comboBadge = document.getElementById('combo-badge');
+        const comboCount = document.getElementById('combo-count');
+        const touchZone = document.getElementById('touch-zone');
+        const touchHint = document.getElementById('touch-hint');
+        const rankingList = document.getElementById('ranking-list');
+        const portraitWarning = document.getElementById('portrait-warning');
+
+        const tabDaily = document.getElementById('tab-daily');
+        const tabWeekly = document.getElementById('tab-weekly');
+
+        let playerName = "";
+        let isPlaying = false;
+        let isSleeping = false;
+        let score = 0;
+        let highScore = getLocalHighScore();
+        let combo = 0;
+
+        let teacherState = 'FACING_BOARD'; // 'FACING_BOARD', 'WARNING', 'LOOKING'
+        let teacherTimer = 0;
+        let warningDuration = 0;
+        let chalkProjectile = null;
+        let particles = [];
+        let chalkTrail = [];
+
+        function resizeCanvas() {
+            canvas.width = gameContainer.clientWidth;
+            canvas.height = gameContainer.clientHeight;
+            if (window.innerHeight > window.innerWidth) portraitWarning.classList.remove('hidden');
+            else portraitWarning.classList.add('hidden');
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const savedName = getSavedName();
+        if (savedName) {
+            inputName.value = savedName;
+            playerName = savedName;
+            displayName.textContent = playerName;
+        }
+        highScoreVal.textContent = `${highScore} pt`;
+
+        function triggerCutIn(type) {
+            // 普通セーフ（表示なし）の場合は何もしない
+            if (type === 'NORMAL') return;
+
+            const el = document.createElement('div');
+            el.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none font-black text-center whitespace-nowrap z-30 ';
+
+            if (type === 'KAMI') {
+                el.className += 'cutin-kami text-4xl md:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-rose-500 to-cyan-400';
+                
+                const titleText = '🔥 超・神セーフ！！ 🔥';
+                el.innerHTML = `${titleText}<br><span class="text-2xl md:text-4xl text-yellow-300 drop-shadow-md">+3000 pt</span>`;
+                
+                gameContainer.classList.remove('shake-light', 'shake-heavy', 'fever-glow');
+                void gameContainer.offsetWidth;
+                gameContainer.classList.add('shake-heavy', 'fever-glow');
+                setTimeout(() => gameContainer.classList.remove('fever-glow'), 1200);
+
+                sfx.kamiSafe();
+                spawnParticles(canvas.width / 2, canvas.height / 2, 80, ['#facc15', '#f43f5e', '#38bdf8', '#ffffff', '#a855f7'], true);
+            } else if (type === 'GIRI') {
+                el.className += 'cutin-giri text-3xl md:text-6xl text-amber-300';
+                el.innerHTML = `⚡ ギリギリセーフ！ ⚡<br><span class="text-xl md:text-3xl text-white">+600 pt</span>`;
+                
+                gameContainer.classList.remove('shake-light', 'shake-heavy');
+                void gameContainer.offsetWidth;
+                gameContainer.classList.add('shake-light');
+                sfx.giriSafe();
+                spawnParticles(canvas.width / 2, canvas.height / 2, 35, ['#facc15', '#ffffff', '#fb923c']);
+            }
+
+            cutinContainer.appendChild(el);
+            setTimeout(() => el.remove(), 1050);
+        }
+
+        function spawnParticles(x, y, count, colors, isConfetti = false) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = isConfetti ? (3 + Math.random() * 12) : (2 + Math.random() * 7);
+                particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - (isConfetti ? 2 : 0),
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 1.0,
+                    decay: 0.015 + Math.random() * 0.025,
+                    size: isConfetti ? (5 + Math.random() * 8) : (3 + Math.random() * 5),
+                    isSquare: isConfetti && Math.random() > 0.4
+                });
+            }
+        }
+
+        function startNewGame() {
+            if (!playerName) { modalName.classList.remove('hidden'); return; }
+            score = 0;
+            combo = 0;
+            teacherState = 'FACING_BOARD';
+            
+            // 初回は簡単め（長く見届ける）
+            teacherTimer = 110 + Math.random() * 60;
+            chalkProjectile = null;
+            chalkTrail = [];
+            isPlaying = true;
+            isSleeping = false;
+
+            scoreVal.textContent = '0';
+            comboBadge.style.opacity = '0';
+            modalName.classList.add('hidden');
+            modalGameOver.classList.add('hidden');
+            touchHint.classList.remove('opacity-0');
+
+            sfx.init();
+        }
+
+        function gameOver(reason) {
+            isPlaying = false;
+            isSleeping = false;
+            sfx.gameover();
+
+            gameContainer.classList.add('shake-heavy');
+            setTimeout(() => gameContainer.classList.remove('shake-heavy'), 500);
+
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('final-combo').textContent = combo;
+            document.getElementById('gameover-reason').textContent = reason;
+
+            if (score > highScore) {
+                highScore = score;
+                setLocalHighScore(highScore);
+                highScoreVal.textContent = `${highScore} pt`;
+            }
+
+            submitScoreToOnlineLeaderboard(playerName, score);
+            renderLeaderboard();
+            modalGameOver.classList.remove('hidden');
+        }
+
+        async function renderLeaderboard() {
+            rankingList.innerHTML = '<div class="text-slate-500 text-center py-2">ランキング読み込み中...</div>';
+            const topScores = await fetchOnlineLeaderboards(activeTab);
+            if (topScores.length === 0) {
+                rankingList.innerHTML = `<div class="text-slate-500 text-center py-2">記録がありません</div>`;
+                return;
+            }
+            rankingList.innerHTML = topScores.map((item, idx) => {
+                const rankColor = idx === 0 ? 'text-amber-400 font-black' : idx === 1 ? 'text-slate-300' : 'text-slate-400';
+                const isMe = item.name.toLowerCase() === playerName.toLowerCase();
+                return `
+                    <div class="flex justify-between items-center px-2 py-1 rounded ${isMe ? 'bg-indigo-950/80 border border-indigo-500/50' : 'bg-slate-900/50'}">
+                        <span class="${rankColor} flex items-center gap-1">
+                            <span class="w-4 text-center">${idx + 1}.</span>
+                            <span>${escapeHtml(item.name)}</span>
+                        </span>
+                        <span class="font-bold text-amber-300">${item.score} pt</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
+        }
+
+        tabDaily.addEventListener('click', () => {
+            activeTab = 'daily';
+            tabDaily.className = 'px-3 py-1 rounded-t-lg text-xs font-bold transition bg-amber-500 text-slate-950';
+            tabWeekly.className = 'px-3 py-1 rounded-t-lg text-xs font-bold transition bg-slate-800 text-slate-400 hover:text-white';
+            renderLeaderboard();
+        });
+
+        tabWeekly.addEventListener('click', () => {
+            activeTab = 'weekly';
+            tabWeekly.className = 'px-3 py-1 rounded-t-lg text-xs font-bold transition bg-amber-500 text-slate-950';
+            tabDaily.className = 'px-3 py-1 rounded-t-lg text-xs font-bold transition bg-slate-800 text-slate-400 hover:text-white';
+            renderLeaderboard();
+        });
+
+        function handleSleepStart(e) {
+            if (e) e.preventDefault();
+            if (!isPlaying) return;
+            isSleeping = true;
+            touchHint.classList.add('opacity-0');
+        }
+
+        function handleSleepEnd(e) {
+            if (e) e.preventDefault();
+            if (!isPlaying || !isSleeping) return;
+            isSleeping = false;
+
+            if (teacherState === 'WARNING') {
+                const ratio = teacherTimer / warningDuration;
+
+                // 3段階判定（「神」は出すのが相当うまい超厳格レベル、ギリギリはギリギリ、セーフは表示なし）
+                if (ratio <= 0.15) {
+                    // 15%未満（残りわずか0.08秒前後！）の相当上手い超人レベル「超・神セーフ」
+                    score += 3000;
+                    combo += 2;
+                    triggerCutIn('KAMI');
+                } else if (ratio <= 0.35) {
+                    // 残り15%〜35%の「ギリギリセーフ」
+                    score += 600;
+                    combo += 1;
+                    triggerCutIn('GIRI');
+                } else {
+                    // 通常セーフ（表示なし・静かに進行）
+                    score += 100;
+                    combo += 1;
+                    triggerCutIn('NORMAL');
+                }
+                
+                comboCount.textContent = combo;
+                comboBadge.style.opacity = '1';
+                scoreVal.textContent = score;
+            }
+        }
+
+        touchZone.addEventListener('mousedown', handleSleepStart);
+        touchZone.addEventListener('mouseup', handleSleepEnd);
+        touchZone.addEventListener('touchstart', handleSleepStart, { passive: false });
+        touchZone.addEventListener('touchend', handleSleepEnd, { passive: false });
+
+        btnStart.addEventListener('click', () => {
+            const val = inputName.value.trim();
+            if (!val) { nameError.classList.remove('hidden'); return; }
+            nameError.classList.add('hidden');
+            playerName = val;
+            savePlayerName(playerName);
+            displayName.textContent = playerName;
+            startNewGame();
+        });
+
+        btnChangeName.addEventListener('click', () => {
+            modalGameOver.classList.add('hidden');
+            modalName.classList.remove('hidden');
+            inputName.focus();
+        });
+
+        btnRetry.addEventListener('click', startNewGame);
+        btnAudio.addEventListener('click', () => {
+            sfx.muted = !sfx.muted;
+            btnAudio.textContent = sfx.muted ? '🔇 SOUND: OFF' : '🔊 SOUND: ON';
+        });
+
+        /* GAME LOOP */
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            if (!isPlaying) return;
+
+            if (isSleeping) {
+                score += 4 + Math.floor(combo * 0.8);
+                scoreVal.textContent = score;
+
+                if (Math.random() < 0.08) sfx.snore();
+
+                if (teacherState === 'LOOKING') {
+                    gameOver("先生「コラァア！居眠りするなアッ！！」");
+                    return;
+                }
+            }
+
+            teacherTimer--;
+
+            if (teacherState === 'FACING_BOARD') {
+                if (teacherTimer <= 0) {
+                    teacherState = 'WARNING';
+
+                    // コンボ数に応じて難易度スケーリング（コンボ上昇で⚠️時間が高速化）
+                    const baseWarning = Math.max(22, 60 - Math.floor(combo * 3.5));
+                    warningDuration = baseWarning;
+                    teacherTimer = warningDuration;
+                    sfx.alert();
+
+                    // 縦の軌道：奥の先生から手前の生徒へ
+                    const chalkChance = Math.min(0.85, 0.45 + combo * 0.05);
+                    if (Math.random() < chalkChance) {
+                        const baseSpeed = 0.02 + Math.min(0.028, combo * 0.003);
+                        chalkProjectile = {
+                            x: canvas.width * 0.5,
+                            y: canvas.height * 0.28,
+                            targetX: canvas.width * 0.5,
+                            targetY: canvas.height * 0.72,
+                            progress: 0,
+                            speed: baseSpeed + Math.random() * 0.008,
+                            angle: 0
+                        };
+                    }
+                }
+            } else if (teacherState === 'WARNING') {
+                if (teacherTimer <= 0) {
+                    teacherState = 'LOOKING';
+                    teacherTimer = 35 + Math.random() * 40;
+                }
+            } else if (teacherState === 'LOOKING') {
+                if (teacherTimer <= 0) {
+                    teacherState = 'FACING_BOARD';
+                    const intervalBase = Math.max(45, 110 - combo * 5);
+                    teacherTimer = intervalBase + Math.random() * 80;
+                    chalkProjectile = null;
+                }
+            }
+
+            // Chalk Fly Motion & Collision (縦方向移動)
+            if (chalkProjectile) {
+                chalkProjectile.progress += chalkProjectile.speed;
+                chalkProjectile.angle += 0.28;
+
+                const curX = chalkProjectile.x + (chalkProjectile.targetX - chalkProjectile.x) * chalkProjectile.progress;
+                const curY = chalkProjectile.y + (chalkProjectile.targetY - chalkProjectile.y) * chalkProjectile.progress;
+
+                chalkTrail.push({ x: curX, y: curY, alpha: 1.0 });
+
+                // Chalk Hits Player
+                if (chalkProjectile.progress >= 0.92) {
+                    if (isSleeping) {
+                        gameOver("💥 先生の直球チョークが頭部に直撃！！");
+                        return;
+                    } else {
+                        sfx.chalkShatter();
+                        score += 200;
+                        spawnParticles(curX, curY, 30, ['#ffffff', '#fef08a', '#38bdf8']);
+                        chalkProjectile = null;
+                        scoreVal.textContent = score;
+                    }
+                }
+            }
+
+            // Update Chalk Trails
+            for (let i = chalkTrail.length - 1; i >= 0; i--) {
+                chalkTrail[i].alpha -= 0.06;
+                if (chalkTrail[i].alpha <= 0) chalkTrail.splice(i, 1);
+            }
+
+            // Update Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= p.decay;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
+
+        /* GRAPHICS RENDERER (縦ライン配置: 奥＝先生 / 手前＝生徒) */
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // 1. CLASSROOM BACKGROUND (遠近感・黒板前中央)
+            // Big Chalkboard at top center
+            ctx.fillStyle = '#064e3b';
+            ctx.fillRect(w * 0.2, h * 0.05, w * 0.6, h * 0.32);
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 8;
+            ctx.strokeRect(w * 0.2, h * 0.05, w * 0.6, h * 0.32);
+
+            // Chalkboard Writings
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText("【数学II】 微分・積分公式 / ※居眠り絶対禁止！", w * 0.5, h * 0.14);
+            ctx.fillText("f'(x) = lim (f(x+h)-f(x))/h", w * 0.5, h * 0.22);
+
+            // Floor Lines (Perspective)
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(0, h * 0.38, w, h * 0.62);
+
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(w * 0.3, h * 0.38); ctx.lineTo(w * 0.1, h);
+            ctx.moveTo(w * 0.7, h * 0.38); ctx.lineTo(w * 0.9, h);
+            ctx.stroke();
+
+            // 2. TEACHER CHARACTER (奥・上部中央に配置)
+            const teacherX = w * 0.5;
+            const teacherY = h * 0.28;
+
+            ctx.save();
+            ctx.translate(teacherX, teacherY);
+
+            // Suit Body
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(-22, 10, 44, 50);
+
+            // Shirt & Tie
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.moveTo(-8, 10); ctx.lineTo(8, 10); ctx.lineTo(0, 28); ctx.fill();
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(-3, 14, 6, 20);
+
+            // Teacher Head
+            ctx.fillStyle = '#fde047';
+            ctx.beginPath();
+            ctx.arc(0, -18, 24, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (teacherState === 'FACING_BOARD') {
+                // Back Hair (Facing Board)
+                ctx.fillStyle = '#334155';
+                ctx.beginPath();
+                ctx.arc(0, -20, 25, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (teacherState === 'WARNING') {
+                // Warning Sign ⚠️
+                ctx.fillStyle = '#f87171';
+                ctx.font = '900 42px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('⚠️', 0, -54);
+
+                // Glasses Eyes Looking Front
+                ctx.fillStyle = '#000';
+                ctx.fillRect(-14, -22, 9, 6);
+                ctx.fillRect(5, -22, 9, 6);
+            } else if (teacherState === 'LOOKING') {
+                // Angry Mark 💢
+                ctx.fillStyle = '#ef4444';
+                ctx.font = '900 46px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('💢', 0, -56);
+
+                // Angry Face Looking Down at Player
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(-8, -20, 4, 0, Math.PI * 2);
+                ctx.arc(8, -20, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+
+            // 3. CHALK TRAIL & PROJECTILE (手前へと飛ぶ軌道)
+            chalkTrail.forEach(t => {
+                ctx.fillStyle = `rgba(255, 255, 255, ${t.alpha * 0.6})`;
+                ctx.beginPath();
+                ctx.arc(t.x, t.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            if (chalkProjectile) {
+                const curX = chalkProjectile.x + (chalkProjectile.targetX - chalkProjectile.x) * chalkProjectile.progress;
+                const curY = chalkProjectile.y + (chalkProjectile.targetY - chalkProjectile.y) * chalkProjectile.progress;
+
+                ctx.save();
+                ctx.translate(curX, curY);
+                ctx.rotate(chalkProjectile.angle);
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#facc15';
+                ctx.shadowBlur = 15;
+                ctx.fillRect(-12, -4, 24, 8);
+                ctx.restore();
+            }
+
+            // 4. PLAYER CHARACTER & DESK (手前・下部中央に配置)
+            const playerX = w * 0.5;
+            const playerY = h * 0.72;
+
+            ctx.save();
+            ctx.translate(playerX, playerY);
+
+            // Student Body (Uniform)
+            ctx.fillStyle = '#0284c7';
+            ctx.fillRect(-28, -10, 56, 55);
+
+            // Head
+            ctx.fillStyle = '#fed7aa';
+            ctx.beginPath();
+            ctx.arc(0, -38, 28, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Hair
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(0, -44, 29, Math.PI, Math.PI * 2);
+            ctx.fill();
+
+            if (isSleeping) {
+                // Head Sleeping on Desk Posture
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(-14, -36); ctx.lineTo(-4, -36);
+                ctx.moveTo(4, -36); ctx.lineTo(14, -36);
+                ctx.stroke();
+
+                // Zzz... Bubbles
+                const time = Date.now() * 0.005;
+                const zX = Math.sin(time) * 10 + 26;
+                const zY = -68 - (Math.sin(time * 2) * 8);
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = '900 34px sans-serif';
+                ctx.shadowColor = '#38bdf8';
+                ctx.shadowBlur = 10;
+                ctx.fillText('Zzz...', zX, zY);
+            } else {
+                // Awake Eyes
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(-10, -38, 4, 0, Math.PI * 2);
+                ctx.arc(10, -38, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Player Desk in Front
+            ctx.fillStyle = '#b45309';
+            ctx.fillRect(-65, 0, 130, 30);
+            ctx.fillStyle = '#78350f';
+            ctx.fillRect(-60, 30, 12, 45);
+            ctx.fillRect(48, 30, 12, 45);
+
+            ctx.restore();
+
+            // 5. PARTICLES
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                if (p.isSquare) {
+                    ctx.fillRect(p.x, p.y, p.size, p.size);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            ctx.globalAlpha = 1.0;
+        }
+
+        // START GAME LOOP
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
