@@ -127,7 +127,7 @@
             <canvas id="gameCanvas" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></canvas>
             <div id="cutin-container" class="absolute inset-0 z-20 pointer-events-none overflow-hidden"></div>
 
-            <!-- UI TOP BAR (視界を遮らないよう両端へ配置) -->
+            <!-- UI TOP BAR -->
             <div class="relative z-10 flex justify-between items-start pointer-events-none">
                 <div class="flex flex-col gap-1">
                     <div class="flex items-center gap-2 pointer-events-auto">
@@ -203,7 +203,7 @@
                         </div>
                     </div>
 
-                    <!-- RANKING TABS (デイリー & ウィークリー) -->
+                    <!-- RANKING TABS -->
                     <div class="mb-3">
                         <div class="flex justify-between items-center mb-2">
                             <div class="flex gap-1">
@@ -347,7 +347,6 @@
                 setTimeout(() => this.playTone(783.99, 'triangle', 0.2, 0.2), 80);
             }
             kamiSafe() {
-                // 超・神セーフ ファンファーレ
                 [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((f, idx) => {
                     setTimeout(() => this.playTone(f, 'square', 0.25, 0.22), idx * 30);
                 });
@@ -399,7 +398,7 @@
         let highScore = getLocalHighScore();
         let combo = 0;
 
-        let teacherState = 'FACING_BOARD'; // 'FACING_BOARD', 'WARNING', 'LOOKING'
+        let teacherState = 'FACING_BOARD'; 
         let teacherTimer = 0;
         let warningDuration = 0;
         let chalkProjectile = null;
@@ -424,7 +423,6 @@
         highScoreVal.textContent = `${highScore} pt`;
 
         function triggerCutIn(type) {
-            // 普通セーフ（表示なし）の場合は何もしない
             if (type === 'NORMAL') return;
 
             const el = document.createElement('div');
@@ -432,9 +430,7 @@
 
             if (type === 'KAMI') {
                 el.className += 'cutin-kami text-4xl md:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-rose-500 to-cyan-400';
-                
-                const titleText = '🔥 超・神セーフ！！ 🔥';
-                el.innerHTML = `${titleText}<br><span class="text-2xl md:text-4xl text-yellow-300 drop-shadow-md">+3000 pt</span>`;
+                el.innerHTML = `🔥 超・神セーフ！！ 🔥<br><span class="text-2xl md:text-4xl text-yellow-300 drop-shadow-md">+3000 pt</span>`;
                 
                 gameContainer.classList.remove('shake-light', 'shake-heavy', 'fever-glow');
                 void gameContainer.offsetWidth;
@@ -452,6 +448,26 @@
                 gameContainer.classList.add('shake-light');
                 sfx.giriSafe();
                 spawnParticles(canvas.width / 2, canvas.height / 2, 35, ['#facc15', '#ffffff', '#fb923c']);
+            } else if (type === 'PARRY_KAMI') {
+                el.className += 'cutin-kami text-4xl md:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-amber-300 to-rose-500';
+                el.innerHTML = `⚔️ 神パリイ！！ ⚔️<br><span class="text-2xl md:text-4xl text-cyan-300 drop-shadow-md">+4000 pt</span>`;
+                
+                gameContainer.classList.remove('shake-light', 'shake-heavy', 'fever-glow');
+                void gameContainer.offsetWidth;
+                gameContainer.classList.add('shake-heavy', 'fever-glow');
+                setTimeout(() => gameContainer.classList.remove('fever-glow'), 1200);
+
+                sfx.kamiSafe();
+                spawnParticles(canvas.width / 2, canvas.height * 0.72, 90, ['#38bdf8', '#facc15', '#ffffff', '#a855f7'], true);
+            } else if (type === 'PARRY_GIRI') {
+                el.className += 'cutin-giri text-3xl md:text-6xl text-cyan-300';
+                el.innerHTML = `🛡️ ギリギリパリイ！ 🛡️<br><span class="text-xl md:text-3xl text-white">+1000 pt</span>`;
+                
+                gameContainer.classList.remove('shake-light', 'shake-heavy');
+                void gameContainer.offsetWidth;
+                gameContainer.classList.add('shake-light');
+                sfx.giriSafe();
+                spawnParticles(canvas.width / 2, canvas.height * 0.72, 45, ['#38bdf8', '#ffffff', '#60a5fa']);
             }
 
             cutinContainer.appendChild(el);
@@ -481,7 +497,6 @@
             combo = 0;
             teacherState = 'FACING_BOARD';
             
-            // 初回は簡単め（長く見届ける）
             teacherTimer = 110 + Math.random() * 60;
             chalkProjectile = null;
             chalkTrail = [];
@@ -572,22 +587,54 @@
             if (!isPlaying || !isSleeping) return;
             isSleeping = false;
 
+            // 1. チョークが飛んでいる最中に起き上がった（パリイ判定）
+            if (chalkProjectile) {
+                const remainingProgress = 1.0 - chalkProjectile.progress;
+
+                if (remainingProgress <= 0.12) {
+                    // 超引きつけて（到達直前0.12以内）起きたら「神パリイ」
+                    score += 4000;
+                    combo += 3;
+                    triggerCutIn('PARRY_KAMI');
+                    sfx.chalkShatter();
+                    spawnParticles(chalkProjectile.x, chalkProjectile.y, 45, ['#38bdf8', '#facc15', '#ffffff']);
+                    chalkProjectile = null;
+                } else if (remainingProgress <= 0.35) {
+                    // 余裕をもって（到達前0.12〜0.35以内）手前で起きたら「ギリギリパリイ」
+                    score += 1000;
+                    combo += 1;
+                    triggerCutIn('PARRY_GIRI');
+                    sfx.chalkShatter();
+                    spawnParticles(chalkProjectile.x, chalkProjectile.y, 25, ['#38bdf8', '#ffffff']);
+                    chalkProjectile = null;
+                } else {
+                    // かなり早めに安全回避した場合は通常破壊（表示なし）
+                    score += 200;
+                    combo += 1;
+                    sfx.chalkShatter();
+                    spawnParticles(chalkProjectile.x, chalkProjectile.y, 15, ['#ffffff']);
+                    chalkProjectile = null;
+                }
+
+                comboCount.textContent = combo;
+                comboBadge.style.opacity = '1';
+                scoreVal.textContent = score;
+                return;
+            }
+
+            // 2. 視線（⚠️警告）タイミングでの回避判定
             if (teacherState === 'WARNING') {
                 const ratio = teacherTimer / warningDuration;
 
-                // 3段階判定（「神」は出すのが相当うまい超厳格レベル、ギリギリはギリギリ、セーフは表示なし）
                 if (ratio <= 0.15) {
-                    // 15%未満（残りわずか0.08秒前後！）の相当上手い超人レベル「超・神セーフ」
                     score += 3000;
                     combo += 2;
                     triggerCutIn('KAMI');
                 } else if (ratio <= 0.35) {
-                    // 残り15%〜35%の「ギリギリセーフ」
                     score += 600;
                     combo += 1;
                     triggerCutIn('GIRI');
                 } else {
-                    // 通常セーフ（表示なし・静かに進行）
                     score += 100;
                     combo += 1;
                     triggerCutIn('NORMAL');
@@ -654,13 +701,11 @@
                 if (teacherTimer <= 0) {
                     teacherState = 'WARNING';
 
-                    // コンボ数に応じて難易度スケーリング（コンボ上昇で⚠️時間が高速化）
                     const baseWarning = Math.max(22, 60 - Math.floor(combo * 3.5));
                     warningDuration = baseWarning;
                     teacherTimer = warningDuration;
                     sfx.alert();
 
-                    // 縦の軌道：奥の先生から手前の生徒へ
                     const chalkChance = Math.min(0.85, 0.45 + combo * 0.05);
                     if (Math.random() < chalkChance) {
                         const baseSpeed = 0.02 + Math.min(0.028, combo * 0.003);
@@ -689,7 +734,7 @@
                 }
             }
 
-            // Chalk Fly Motion & Collision (縦方向移動)
+            // Chalk Fly Motion & Collision
             if (chalkProjectile) {
                 chalkProjectile.progress += chalkProjectile.speed;
                 chalkProjectile.angle += 0.28;
@@ -699,15 +744,16 @@
 
                 chalkTrail.push({ x: curX, y: curY, alpha: 1.0 });
 
-                // Chalk Hits Player
-                if (chalkProjectile.progress >= 0.92) {
+                // 到達（寝たままだと直撃即死）
+                if (chalkProjectile.progress >= 0.95) {
                     if (isSleeping) {
                         gameOver("💥 先生の直球チョークが頭部に直撃！！");
                         return;
                     } else {
+                        // 起きていれば通常自動破壊
                         sfx.chalkShatter();
-                        score += 200;
-                        spawnParticles(curX, curY, 30, ['#ffffff', '#fef08a', '#38bdf8']);
+                        score += 100;
+                        spawnParticles(curX, curY, 20, ['#ffffff', '#fef08a', '#38bdf8']);
                         chalkProjectile = null;
                         scoreVal.textContent = score;
                     }
@@ -730,29 +776,26 @@
             }
         }
 
-        /* GRAPHICS RENDERER (縦ライン配置: 奥＝先生 / 手前＝生徒) */
+        /* GRAPHICS RENDERER */
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             const w = canvas.width;
             const h = canvas.height;
 
-            // 1. CLASSROOM BACKGROUND (遠近感・黒板前中央)
-            // Big Chalkboard at top center
+            // 1. CLASSROOM BACKGROUND
             ctx.fillStyle = '#064e3b';
             ctx.fillRect(w * 0.2, h * 0.05, w * 0.6, h * 0.32);
             ctx.strokeStyle = '#78350f';
             ctx.lineWidth = 8;
             ctx.strokeRect(w * 0.2, h * 0.05, w * 0.6, h * 0.32);
 
-            // Chalkboard Writings
             ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
             ctx.font = 'bold 14px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText("【数学II】 微分・積分公式 / ※居眠り絶対禁止！", w * 0.5, h * 0.14);
             ctx.fillText("f'(x) = lim (f(x+h)-f(x))/h", w * 0.5, h * 0.22);
 
-            // Floor Lines (Perspective)
             ctx.fillStyle = '#1e293b';
             ctx.fillRect(0, h * 0.38, w, h * 0.62);
 
@@ -763,54 +806,46 @@
             ctx.moveTo(w * 0.7, h * 0.38); ctx.lineTo(w * 0.9, h);
             ctx.stroke();
 
-            // 2. TEACHER CHARACTER (奥・上部中央に配置)
+            // 2. TEACHER CHARACTER
             const teacherX = w * 0.5;
             const teacherY = h * 0.28;
 
             ctx.save();
             ctx.translate(teacherX, teacherY);
 
-            // Suit Body
             ctx.fillStyle = '#1e293b';
             ctx.fillRect(-22, 10, 44, 50);
 
-            // Shirt & Tie
             ctx.fillStyle = '#ffffff';
             ctx.beginPath(); ctx.moveTo(-8, 10); ctx.lineTo(8, 10); ctx.lineTo(0, 28); ctx.fill();
             ctx.fillStyle = '#ef4444';
             ctx.fillRect(-3, 14, 6, 20);
 
-            // Teacher Head
             ctx.fillStyle = '#fde047';
             ctx.beginPath();
             ctx.arc(0, -18, 24, 0, Math.PI * 2);
             ctx.fill();
 
             if (teacherState === 'FACING_BOARD') {
-                // Back Hair (Facing Board)
                 ctx.fillStyle = '#334155';
                 ctx.beginPath();
                 ctx.arc(0, -20, 25, 0, Math.PI * 2);
                 ctx.fill();
             } else if (teacherState === 'WARNING') {
-                // Warning Sign ⚠️
                 ctx.fillStyle = '#f87171';
                 ctx.font = '900 42px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText('⚠️', 0, -54);
 
-                // Glasses Eyes Looking Front
                 ctx.fillStyle = '#000';
                 ctx.fillRect(-14, -22, 9, 6);
                 ctx.fillRect(5, -22, 9, 6);
             } else if (teacherState === 'LOOKING') {
-                // Angry Mark 💢
                 ctx.fillStyle = '#ef4444';
                 ctx.font = '900 46px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText('💢', 0, -56);
 
-                // Angry Face Looking Down at Player
                 ctx.fillStyle = '#000';
                 ctx.beginPath();
                 ctx.arc(-8, -20, 4, 0, Math.PI * 2);
@@ -819,7 +854,7 @@
             }
             ctx.restore();
 
-            // 3. CHALK TRAIL & PROJECTILE (手前へと飛ぶ軌道)
+            // 3. CHALK TRAIL & PROJECTILE
             chalkTrail.forEach(t => {
                 ctx.fillStyle = `rgba(255, 255, 255, ${t.alpha * 0.6})`;
                 ctx.beginPath();
@@ -841,31 +876,27 @@
                 ctx.restore();
             }
 
-            // 4. PLAYER CHARACTER & DESK (手前・下部中央に配置)
+            // 4. PLAYER CHARACTER & DESK
             const playerX = w * 0.5;
             const playerY = h * 0.72;
 
             ctx.save();
             ctx.translate(playerX, playerY);
 
-            // Student Body (Uniform)
             ctx.fillStyle = '#0284c7';
             ctx.fillRect(-28, -10, 56, 55);
 
-            // Head
             ctx.fillStyle = '#fed7aa';
             ctx.beginPath();
             ctx.arc(0, -38, 28, 0, Math.PI * 2);
             ctx.fill();
 
-            // Hair
             ctx.fillStyle = '#0f172a';
             ctx.beginPath();
             ctx.arc(0, -44, 29, Math.PI, Math.PI * 2);
             ctx.fill();
 
             if (isSleeping) {
-                // Head Sleeping on Desk Posture
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 3;
                 ctx.beginPath();
@@ -873,7 +904,6 @@
                 ctx.moveTo(4, -36); ctx.lineTo(14, -36);
                 ctx.stroke();
 
-                // Zzz... Bubbles
                 const time = Date.now() * 0.005;
                 const zX = Math.sin(time) * 10 + 26;
                 const zY = -68 - (Math.sin(time * 2) * 8);
@@ -884,7 +914,6 @@
                 ctx.shadowBlur = 10;
                 ctx.fillText('Zzz...', zX, zY);
             } else {
-                // Awake Eyes
                 ctx.fillStyle = '#000';
                 ctx.beginPath();
                 ctx.arc(-10, -38, 4, 0, Math.PI * 2);
@@ -892,7 +921,6 @@
                 ctx.fill();
             }
 
-            // Player Desk in Front
             ctx.fillStyle = '#b45309';
             ctx.fillRect(-65, 0, 130, 30);
             ctx.fillStyle = '#78350f';
@@ -916,7 +944,6 @@
             ctx.globalAlpha = 1.0;
         }
 
-        // START GAME LOOP
         requestAnimationFrame(gameLoop);
     </script>
 </body>
